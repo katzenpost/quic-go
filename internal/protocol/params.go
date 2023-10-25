@@ -18,7 +18,7 @@ const InitialPacketSizeIPv6 = 1232
 const MaxCongestionWindowPackets = 10000
 
 // MaxUndecryptablePackets limits the number of undecryptable packets that are queued in the connection.
-const MaxUndecryptablePackets = 32
+const MaxUndecryptablePackets = 256
 
 // ConnectionFlowControlMultiplier determines how much larger the connection flow control windows needs to be relative to any stream's flow control window
 // This is the value that Chromium is using
