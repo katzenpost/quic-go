@@ -105,6 +105,14 @@ func populateConfig(config *Config) *Config {
 	} else if maxIncomingUniStreams < 0 {
 		maxIncomingUniStreams = 0
 	}
+	initialPacketSizeIPv4 := config.InitialPacketSizeIPv4
+	if initialPacketSizeIPv4 == 0 {
+		initialPacketSizeIPv4 = protocol.InitialPacketSizeIPv4
+	}
+	initialPacketSizeIPv6 := config.InitialPacketSizeIPv6
+	if initialPacketSizeIPv6 == 0 {
+		initialPacketSizeIPv6 = protocol.InitialPacketSizeIPv6
+	}
 
 	return &Config{
 		GetConfigForClient:             config.GetConfigForClient,
@@ -113,6 +121,8 @@ func populateConfig(config *Config) *Config {
 		MaxIdleTimeout:                 idleTimeout,
 		RequireAddressValidation:       config.RequireAddressValidation,
 		KeepAlivePeriod:                config.KeepAlivePeriod,
+		InitialPacketSizeIPv4:          initialPacketSizeIPv4,
+		InitialPacketSizeIPv6:          initialPacketSizeIPv6,
 		InitialStreamReceiveWindow:     initialStreamReceiveWindow,
 		MaxStreamReceiveWindow:         maxStreamReceiveWindow,
 		InitialConnectionReceiveWindow: initialConnectionReceiveWindow,
