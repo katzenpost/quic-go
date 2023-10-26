@@ -105,6 +105,10 @@ func populateConfig(config *Config) *Config {
 	} else if maxIncomingUniStreams < 0 {
 		maxIncomingUniStreams = 0
 	}
+	maxPacketBufferSize := config.MaxPacketBufferSize
+	if maxPacketBufferSize == 0 {
+		maxPacketBufferSize = protocol.MaxPacketBufferSize
+	}
 	minInitialPacketSize := config.MinInitialPacketSize
 	if minInitialPacketSize == 0 {
 		minInitialPacketSize = protocol.MinInitialPacketSize
@@ -129,6 +133,7 @@ func populateConfig(config *Config) *Config {
 		InitialPacketSizeIPv4:          initialPacketSizeIPv4,
 		InitialPacketSizeIPv6:          initialPacketSizeIPv6,
 		InitialStreamReceiveWindow:     initialStreamReceiveWindow,
+		MaxPacketBufferSize:            maxPacketBufferSize,
 		MaxStreamReceiveWindow:         maxStreamReceiveWindow,
 		InitialConnectionReceiveWindow: initialConnectionReceiveWindow,
 		MaxConnectionReceiveWindow:     maxConnectionReceiveWindow,

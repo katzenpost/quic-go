@@ -289,12 +289,14 @@ type Config struct {
 	// If this value is zero, it will default to 512 KB.
 	// Values larger than the maximum varint (quicvarint.Max) will be clipped to that value.
 	InitialConnectionReceiveWindow uint64
+	// MaxPacketBufferSize is the maximum size of any QUIC packet.
+	MaxPacketBufferSize int64
 	// MinInitialPacketSize is the minimum packet size of an initial packet.
-	MinInitialPacketSize uint64
+	MinInitialPacketSize int64
 	// InitialPacketSizeIPv4 is the minimum packet size for IPv4 connections.
-	InitialPacketSizeIPv4 uint64
+	InitialPacketSizeIPv4 int64
 	// InitialPacketSizeIPv6 is the minimum packet size for IPv6 connections.
-	InitialPacketSizeIPv6 uint64
+	InitialPacketSizeIPv6 int64
 	// MaxConnectionReceiveWindow is the connection-level flow control window for receiving data.
 	// If this value is zero, it will default to 15 MB.
 	// Values larger than the maximum varint (quicvarint.Max) will be clipped to that value.

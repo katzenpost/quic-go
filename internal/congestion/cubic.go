@@ -64,6 +64,9 @@ type Cubic struct {
 
 	// Last congestion window in packets computed by cubic function.
 	lastTargetCongestionWindow protocol.ByteCount
+
+	// Size of datagram
+	maxDatagramSize protocol.ByteCount
 }
 
 // NewCubic returns a new Cubic instance

@@ -92,6 +92,8 @@ var _ = Describe("Config", func() {
 				f.Set(reflect.ValueOf(int64(11)))
 			case "MaxIncomingUniStreams":
 				f.Set(reflect.ValueOf(int64(12)))
+			case "MaxPacketBufferSize":
+				f.Set(reflect.ValueOf(int64(4200)))
 			case "MinInitialPacketSize":
 				f.Set(reflect.ValueOf(int64(1200)))
 			case "InitialPacketSizeIPv4":
