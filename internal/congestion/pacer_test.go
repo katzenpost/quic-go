@@ -17,21 +17,21 @@ var _ = Describe("Pacer", func() {
 	var bandwidth uint64 // in bytes/s
 
 	BeforeEach(func() {
-		bandwidth = uint64(packetsPerSecond * initialMaxDatagramSize) // 50 full-size packets per second
+		bandwidth = uint64(packetsPerSecond * maxDatagramSize) // 50 full-size packets per second
 		// The pacer will multiply the bandwidth with 1.25 to achieve a slightly higher pacing speed.
 		// For the tests, cancel out this factor, so we can do the math using the exact bandwidth.
-		p = newPacer(func() Bandwidth { return Bandwidth(bandwidth) * BytesPerSecond * 4 / 5 })
+		p = newPacer(func() Bandwidth { return Bandwidth(bandwidth) * BytesPerSecond * 4 / 5 }, maxDatagramSize)
 	})
 
 	It("allows a burst at the beginning", func() {
 		t := time.Now()
 		Expect(p.TimeUntilSend()).To(BeZero())
-		Expect(p.Budget(t)).To(BeEquivalentTo(maxBurstSizePackets * initialMaxDatagramSize))
+		Expect(p.Budget(t)).To(BeEquivalentTo(maxBurstSizePackets * p.maxDatagramSize))
 	})
 
 	It("allows a big burst for high pacing rates", func() {
 		t := time.Now()
-		bandwidth = uint64(10000 * packetsPerSecond * initialMaxDatagramSize)
+		bandwidth = uint64(10000 * packetsPerSecond * p.maxDatagramSize)
 		Expect(p.TimeUntilSend()).To(BeZero())
 		Expect(p.Budget(t)).To(BeNumerically(">", maxBurstSizePackets*initialMaxDatagramSize))
 	})
@@ -131,7 +131,7 @@ var _ = Describe("Pacer", func() {
 	})
 
 	It("protects against overflows", func() {
-		p = newPacer(func() Bandwidth { return infBandwidth })
+		p = newPacer(func() Bandwidth { return infBandwidth }, maxDatagramSize)
 		t := time.Now()
 		p.SentPacket(t, initialMaxDatagramSize)
 		for i := 0; i < 1e5; i++ {

@@ -18,9 +18,9 @@ type pacer struct {
 	adjustedBandwidth func() uint64 // in bytes/s
 }
 
-func newPacer(getBandwidth func() Bandwidth) *pacer {
+func newPacer(getBandwidth func() Bandwidth, maxDatagramSize protocol.ByteCount) *pacer {
 	p := &pacer{
-		maxDatagramSize: initialMaxDatagramSize,
+		maxDatagramSize: maxDatagramSize,
 		adjustedBandwidth: func() uint64 {
 			// Bandwidth is in bits/s. We need the value in bytes/s.
 			bw := uint64(getBandwidth() / BytesPerSecond)

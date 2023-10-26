@@ -273,9 +273,11 @@ var newConnection = func(
 	)
 	s.preSetup()
 	s.ctx, s.ctxCancel = context.WithCancelCause(context.WithValue(context.Background(), ConnectionTracingKey, tracingID))
+	maxPacketSize := getMaxPacketSize(s.conn.RemoteAddr(), s.config)
 	s.sentPacketHandler, s.receivedPacketHandler = ackhandler.NewAckHandler(
 		0,
-		getMaxPacketSize(s.conn.RemoteAddr(), s.config),
+		maxPacketSize,
+		maxPacketSize,
 		s.rttStats,
 		clientAddressValidated,
 		s.conn.capabilities().ECN,
@@ -283,7 +285,7 @@ var newConnection = func(
 		s.tracer,
 		s.logger,
 	)
-	s.mtuDiscoverer = newMTUDiscoverer(s.rttStats, getMaxPacketSize(s.conn.RemoteAddr(), s.config), s.sentPacketHandler.SetMaxDatagramSize)
+	s.mtuDiscoverer = newMTUDiscoverer(s.rttStats, maxPacketSize, s.sentPacketHandler.SetMaxDatagramSize)
 	params := &wire.TransportParameters{
 		InitialMaxStreamDataBidiLocal:   protocol.ByteCount(s.config.InitialStreamReceiveWindow),
 		InitialMaxStreamDataBidiRemote:  protocol.ByteCount(s.config.InitialStreamReceiveWindow),
@@ -382,9 +384,11 @@ var newClientConnection = func(
 	)
 	s.preSetup()
 	s.ctx, s.ctxCancel = context.WithCancelCause(context.WithValue(context.Background(), ConnectionTracingKey, tracingID))
+	maxPacketSize := getMaxPacketSize(s.conn.RemoteAddr(), s.config)
 	s.sentPacketHandler, s.receivedPacketHandler = ackhandler.NewAckHandler(
 		initialPacketNumber,
-		getMaxPacketSize(s.conn.RemoteAddr(), s.config),
+		maxPacketSize,
+		maxPacketSize,
 		s.rttStats,
 		false, // has no effect
 		s.conn.capabilities().ECN,
@@ -392,7 +396,7 @@ var newClientConnection = func(
 		s.tracer,
 		s.logger,
 	)
-	s.mtuDiscoverer = newMTUDiscoverer(s.rttStats, getMaxPacketSize(s.conn.RemoteAddr(), s.config), s.sentPacketHandler.SetMaxDatagramSize)
+	s.mtuDiscoverer = newMTUDiscoverer(s.rttStats, maxPacketSize, s.sentPacketHandler.SetMaxDatagramSize)
 	oneRTTStream := newCryptoStream()
 	params := &wire.TransportParameters{
 		InitialMaxStreamDataBidiRemote: protocol.ByteCount(s.config.InitialStreamReceiveWindow),

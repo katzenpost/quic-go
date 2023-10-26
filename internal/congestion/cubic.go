@@ -20,9 +20,6 @@ import (
 const (
 	cubeScale                                    = 40
 	cubeCongestionWindowScale                    = 410
-	cubeFactor                protocol.ByteCount = 1 << cubeScale / cubeCongestionWindowScale / maxDatagramSize
-	// TODO: when re-enabling cubic, make sure to use the actual packet size here
-	maxDatagramSize = protocol.ByteCount(protocol.InitialPacketSizeIPv4)
 )
 
 const defaultNumConnections = 1
@@ -67,13 +64,18 @@ type Cubic struct {
 
 	// Size of datagram
 	maxDatagramSize protocol.ByteCount
+
+	// cubeFactor is proportional to maxDatagramSize
+	cubeFactor protocol.ByteCount
 }
 
 // NewCubic returns a new Cubic instance
-func NewCubic(clock Clock) *Cubic {
+func NewCubic(clock Clock, maxDatagramSize protocol.ByteCount) *Cubic {
 	c := &Cubic{
 		clock:          clock,
 		numConnections: defaultNumConnections,
+		maxDatagramSize: maxDatagramSize,
+		cubeFactor: 1 << cubeScale / cubeCongestionWindowScale / maxDatagramSize,
 	}
 	c.Reset()
 	return c
@@ -132,7 +134,7 @@ func (c *Cubic) OnApplicationLimited() {
 // a loss event. Returns the new congestion window in packets. The new
 // congestion window is a multiplicative decrease of our current window.
 func (c *Cubic) CongestionWindowAfterPacketLoss(currentCongestionWindow protocol.ByteCount) protocol.ByteCount {
-	if currentCongestionWindow+maxDatagramSize < c.lastMaxCongestionWindow {
+	if currentCongestionWindow+c.maxDatagramSize < c.lastMaxCongestionWindow {
 		// We never reached the old max, so assume we are competing with another
 		// flow. Use our extra back off factor to allow the other flow to go up.
 		c.lastMaxCongestionWindow = protocol.ByteCount(c.betaLastMax() * float32(currentCongestionWindow))
@@ -165,7 +167,7 @@ func (c *Cubic) CongestionWindowAfterAck(
 			c.timeToOriginPoint = 0
 			c.originPointCongestionWindow = currentCongestionWindow
 		} else {
-			c.timeToOriginPoint = uint32(math.Cbrt(float64(cubeFactor * (c.lastMaxCongestionWindow - currentCongestionWindow))))
+			c.timeToOriginPoint = uint32(math.Cbrt(float64(c.cubeFactor * (c.lastMaxCongestionWindow - currentCongestionWindow))))
 			c.originPointCongestionWindow = c.lastMaxCongestionWindow
 		}
 	}
@@ -182,7 +184,7 @@ func (c *Cubic) CongestionWindowAfterAck(
 		offset = -offset
 	}
 
-	deltaCongestionWindow := protocol.ByteCount(cubeCongestionWindowScale*offset*offset*offset) * maxDatagramSize >> cubeScale
+	deltaCongestionWindow := protocol.ByteCount(cubeCongestionWindowScale*offset*offset*offset) * c.maxDatagramSize >> cubeScale
 	var targetCongestionWindow protocol.ByteCount
 	if elapsedTime > int64(c.timeToOriginPoint) {
 		targetCongestionWindow = c.originPointCongestionWindow + deltaCongestionWindow
@@ -197,7 +199,7 @@ func (c *Cubic) CongestionWindowAfterAck(
 	// congestion windows (less than 25), the formula below will
 	// increase slightly slower than linearly per estimated tcp window
 	// of bytes.
-	c.estimatedTCPcongestionWindow += protocol.ByteCount(float32(c.ackedBytesCount) * c.alpha() * float32(maxDatagramSize) / float32(c.estimatedTCPcongestionWindow))
+	c.estimatedTCPcongestionWindow += protocol.ByteCount(float32(c.ackedBytesCount) * c.alpha() * float32(c.maxDatagramSize) / float32(c.estimatedTCPcongestionWindow))
 	c.ackedBytesCount = 0
 
 	// We have a new cubic congestion window.
