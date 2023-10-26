@@ -92,6 +92,12 @@ var _ = Describe("Config", func() {
 				f.Set(reflect.ValueOf(int64(11)))
 			case "MaxIncomingUniStreams":
 				f.Set(reflect.ValueOf(int64(12)))
+			case "MinInitialPacketSize":
+				f.Set(reflect.ValueOf(int64(1200)))
+			case "InitialPacketSizeIPv4":
+				f.Set(reflect.ValueOf(int64(1252)))
+			case "InitialPacketSizeIPv6":
+				f.Set(reflect.ValueOf(int64(1232)))
 			case "StatelessResetKey":
 				f.Set(reflect.ValueOf(&StatelessResetKey{1, 2, 3, 4}))
 			case "KeepAlivePeriod":

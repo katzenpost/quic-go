@@ -27,15 +27,15 @@ const (
 	mtuProbeDelay = 5
 )
 
-func getMaxPacketSize(addr net.Addr) protocol.ByteCount {
-	maxSize := protocol.ByteCount(protocol.MinInitialPacketSize)
+func getMaxPacketSize(addr net.Addr, config *Config) protocol.ByteCount {
+	maxSize := protocol.ByteCount(config.MinInitialPacketSize)
 	// If this is not a UDP address, we don't know anything about the MTU.
 	// Use the minimum size of an Initial packet as the max packet size.
 	if udpAddr, ok := addr.(*net.UDPAddr); ok {
 		if utils.IsIPv4(udpAddr.IP) {
-			maxSize = protocol.InitialPacketSizeIPv4
+			maxSize = protocol.ByteCount(config.InitialPacketSizeIPv4)
 		} else {
-			maxSize = protocol.InitialPacketSizeIPv6
+			maxSize = protocol.ByteCount(config.InitialPacketSizeIPv6)
 		}
 	}
 	return maxSize

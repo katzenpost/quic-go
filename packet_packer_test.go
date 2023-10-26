@@ -37,7 +37,9 @@ var _ = Describe("Packet packer", func() {
 		handshakeStream     *MockCryptoStream
 		sealingManager      *MockSealingManager
 		pnManager           *mockackhandler.MockSentPacketHandler
+		conf                *Config
 	)
+	conf = populateConfig(nil)
 	connID := protocol.ParseConnectionID([]byte{1, 2, 3, 4, 5, 6, 7, 8})
 
 	parsePacket := func(data []byte) (hdrs []*wire.ExtendedHeader, more []byte) {
@@ -102,18 +104,18 @@ var _ = Describe("Packet packer", func() {
 
 	Context("determining the maximum packet size", func() {
 		It("uses the minimum initial size, if it can't determine if the remote address is IPv4 or IPv6", func() {
-			Expect(getMaxPacketSize(&net.TCPAddr{})).To(BeEquivalentTo(protocol.MinInitialPacketSize))
+			Expect(getMaxPacketSize(&net.TCPAddr{}, conf)).To(BeEquivalentTo(protocol.MinInitialPacketSize))
 		})
 
 		It("uses the maximum IPv4 packet size, if the remote address is IPv4", func() {
 			addr := &net.UDPAddr{IP: net.IPv4(11, 12, 13, 14), Port: 1337}
-			Expect(getMaxPacketSize(addr)).To(BeEquivalentTo(protocol.InitialPacketSizeIPv4))
+			Expect(getMaxPacketSize(addr, conf)).To(BeEquivalentTo(protocol.InitialPacketSizeIPv4))
 		})
 
 		It("uses the maximum IPv6 packet size, if the remote address is IPv6", func() {
 			ip := net.ParseIP("2001:0db8:85a3:0000:0000:8a2e:0370:7334")
 			addr := &net.UDPAddr{IP: ip, Port: 1337}
-			Expect(getMaxPacketSize(addr)).To(BeEquivalentTo(protocol.InitialPacketSizeIPv6))
+			Expect(getMaxPacketSize(addr, conf)).To(BeEquivalentTo(protocol.InitialPacketSizeIPv6))
 		})
 	})
 
