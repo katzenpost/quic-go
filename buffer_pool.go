@@ -13,6 +13,8 @@ type packetBuffer struct {
 	// It doesn't support concurrent use.
 	// It is > 1 when used for coalesced packet.
 	refCount int
+
+	packetSize protocol.ByteCount
 }
 
 // Split increases the refCount.
@@ -55,7 +57,7 @@ func (b *packetBuffer) Len() protocol.ByteCount { return protocol.ByteCount(len(
 func (b *packetBuffer) Cap() protocol.ByteCount { return protocol.ByteCount(cap(b.Data)) }
 
 func (b *packetBuffer) putBack() {
-	if cap(b.Data) == protocol.MaxPacketBufferSize {
+	if cap(b.Data) == int(b.packetSize) {
 		bufferPool.Put(b)
 		return
 	}
@@ -67,26 +69,30 @@ func (b *packetBuffer) putBack() {
 }
 
 var bufferPool, largeBufferPool sync.Pool
+var getBufferOnce, getLargeBufferOnce sync.Once
 
-func getPacketBuffer() *packetBuffer {
+func getPacketBuffer(size protocol.ByteCount) *packetBuffer {
+	// initialize packetBuffer constructor only once
+	getBufferOnce.Do(func() {
+		bufferPool.New = func() any {
+			return &packetBuffer{packetSize: size, Data: make([]byte, 0, size)}
+		}
+	})
 	buf := bufferPool.Get().(*packetBuffer)
 	buf.refCount = 1
 	buf.Data = buf.Data[:0]
 	return buf
 }
 
-func getLargePacketBuffer() *packetBuffer {
+func getLargePacketBuffer(size protocol.ByteCount) *packetBuffer {
+	// initialize getLargeBuffer constructor only once
+	getLargeBufferOnce.Do(func() {
+		largeBufferPool.New = func() any {
+			return &packetBuffer{packetSize: size, Data: make([]byte, 0, size)}
+		}
+	})
 	buf := largeBufferPool.Get().(*packetBuffer)
 	buf.refCount = 1
 	buf.Data = buf.Data[:0]
 	return buf
-}
-
-func init() {
-	bufferPool.New = func() any {
-		return &packetBuffer{Data: make([]byte, 0, protocol.MaxPacketBufferSize)}
-	}
-	largeBufferPool.New = func() any {
-		return &packetBuffer{Data: make([]byte, 0, protocol.MaxLargePacketBufferSize)}
-	}
 }

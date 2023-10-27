@@ -32,7 +32,7 @@ var _ = Describe("Server", func() {
 	)
 
 	getPacket := func(hdr *wire.Header, p []byte) receivedPacket {
-		buf := getPacketBuffer()
+		buf := getPacketBuffer(protocol.MaxPacketBufferSize)
 		hdr.Length = 4 + protocol.ByteCount(len(p)) + 16
 		var err error
 		buf.Data, err = (&wire.ExtendedHeader{
@@ -64,7 +64,7 @@ var _ = Describe("Server", func() {
 			Version:          protocol.Version1,
 		}
 		p := getPacket(hdr, make([]byte, protocol.MinInitialPacketSize))
-		p.buffer = getPacketBuffer()
+		p.buffer = getPacketBuffer(protocol.MaxPacketBufferSize)
 		p.remoteAddr = senderAddr
 		return p
 	}
@@ -389,7 +389,7 @@ var _ = Describe("Server", func() {
 				serv.handlePacket(receivedPacket{
 					remoteAddr: raddr,
 					data:       data,
-					buffer:     getPacketBuffer(),
+					buffer:     getPacketBuffer(protocol.MaxPacketBufferSize),
 				})
 				Eventually(done).Should(BeClosed())
 				// make sure no other packet is sent
@@ -1045,7 +1045,7 @@ var _ = Describe("Server", func() {
 					return ok
 				})
 				serv.handleInitialImpl(
-					receivedPacket{buffer: getPacketBuffer()},
+					receivedPacket{buffer: getPacketBuffer(protocol.MaxLargePacketBufferSize)},
 					&wire.Header{DestConnectionID: protocol.ParseConnectionID([]byte{1, 2, 3, 4, 5, 6, 7, 8})},
 				)
 				Consistently(done).ShouldNot(BeClosed())
@@ -1070,7 +1070,7 @@ var _ = Describe("Server", func() {
 					return len(b), nil
 				})
 				serv.handleInitialImpl(
-					receivedPacket{buffer: getPacketBuffer()},
+					receivedPacket{buffer: getPacketBuffer(protocol.MaxLargePacketBufferSize)},
 					&wire.Header{DestConnectionID: protocol.ParseConnectionID([]byte{1, 2, 3, 4, 5, 6, 7, 8}), Version: protocol.Version1},
 				)
 				Eventually(done).Should(BeClosed())
@@ -1121,7 +1121,7 @@ var _ = Describe("Server", func() {
 					return ok
 				})
 				serv.handleInitialImpl(
-					receivedPacket{buffer: getPacketBuffer()},
+					receivedPacket{buffer: getPacketBuffer(protocol.MaxLargePacketBufferSize)},
 					&wire.Header{DestConnectionID: protocol.ParseConnectionID([]byte{1, 2, 3, 4, 5, 6, 7, 8})},
 				)
 				Consistently(done).ShouldNot(BeClosed())
@@ -1194,7 +1194,7 @@ var _ = Describe("Server", func() {
 				return ok
 			})
 			serv.baseServer.handleInitialImpl(
-				receivedPacket{buffer: getPacketBuffer()},
+				receivedPacket{buffer: getPacketBuffer(protocol.MaxLargePacketBufferSize)},
 				&wire.Header{DestConnectionID: protocol.ParseConnectionID([]byte{1, 2, 3, 4, 5, 6, 7, 8})},
 			)
 			Consistently(done).ShouldNot(BeClosed())

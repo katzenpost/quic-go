@@ -1882,8 +1882,10 @@ func (s *connection) sendPackets(now time.Time) error {
 }
 
 func (s *connection) sendPacketsWithoutGSO(now time.Time) error {
+
+	maxPacketSize := getMaxPacketSize(s.conn.RemoteAddr(), s.config)
 	for {
-		buf := getPacketBuffer()
+		buf := getPacketBuffer(maxPacketSize)
 		ecn := s.sentPacketHandler.ECNMode(true)
 		if _, err := s.appendOneShortHeaderPacket(buf, s.mtuDiscoverer.CurrentSize(), ecn, now); err != nil {
 			if err == errNothingToPack {
@@ -1915,7 +1917,7 @@ func (s *connection) sendPacketsWithoutGSO(now time.Time) error {
 }
 
 func (s *connection) sendPacketsWithGSO(now time.Time) error {
-	buf := getLargePacketBuffer()
+	buf := getLargePacketBuffer(protocol.MaxLargePacketBufferSize)
 	maxSize := s.mtuDiscoverer.CurrentSize()
 
 	ecn := s.sentPacketHandler.ECNMode(true)
@@ -1969,8 +1971,7 @@ func (s *connection) sendPacketsWithGSO(now time.Time) error {
 			s.pacingDeadline = deadlineSendImmediately
 			return nil
 		}
-
-		buf = getLargePacketBuffer()
+		buf = getLargePacketBuffer(protocol.MaxLargePacketBufferSize)
 	}
 }
 

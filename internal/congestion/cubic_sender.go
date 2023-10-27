@@ -54,7 +54,7 @@ type cubicSender struct {
 	initialMaxCongestionWindow protocol.ByteCount
 
 	initialMaxDatagramSize protocol.ByteCount
-	maxDatagramSize protocol.ByteCount
+	maxDatagramSize        protocol.ByteCount
 
 	lastState logging.CongestionState
 	tracer    *logging.ConnectionTracer

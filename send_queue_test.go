@@ -20,7 +20,7 @@ var _ = Describe("Send Queue", func() {
 	})
 
 	getPacket := func(b []byte) *packetBuffer {
-		buf := getPacketBuffer()
+		buf := getPacketBuffer(protocol.MaxPacketBufferSize)
 		buf.Data = buf.Data[:len(b)]
 		copy(buf.Data, b)
 		return buf

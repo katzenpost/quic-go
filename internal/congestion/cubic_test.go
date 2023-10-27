@@ -16,7 +16,7 @@ const (
 	nConnectionBetaLastMax float32 = (float32(numConnections) - 1 + betaLastMax) / float32(numConnections)
 	nConnectionAlpha       float32 = 3 * float32(numConnections) * float32(numConnections) * (1 - nConnectionBeta) / (1 + nConnectionBeta)
 	maxCubicTimeInterval           = 30 * time.Millisecond
-	maxDatagramSize = protocol.MaxPacketBufferSize
+	maxDatagramSize                = protocol.MaxPacketBufferSize
 )
 
 var _ = Describe("Cubic", func() {

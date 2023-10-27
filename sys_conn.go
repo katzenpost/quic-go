@@ -83,12 +83,13 @@ func wrapConn(pc net.PacketConn) (rawConn, error) {
 type basicConn struct {
 	net.PacketConn
 	supportsDF bool
+	packetSize protocol.ByteCount
 }
 
 var _ rawConn = &basicConn{}
 
 func (c *basicConn) ReadPacket() (receivedPacket, error) {
-	buffer := getPacketBuffer()
+	buffer := getPacketBuffer(c.packetSize)
 	// The packet size should not exceed protocol.MaxPacketBufferSize bytes
 	// If it does, we only read a truncated packet, which will then end up undecryptable
 	buffer.Data = buffer.Data[:protocol.MaxPacketBufferSize]

@@ -757,7 +757,8 @@ func (s *baseServer) sendRetryPacket(p rejectedPacket) error {
 		replyHdr.Log(s.logger)
 	}
 
-	buf := getPacketBuffer()
+	maxPacketSize := protocol.ByteCount(s.config.MaxPacketBufferSize)
+	buf := getPacketBuffer(maxPacketSize)
 	defer buf.Release()
 	buf.Data, err = replyHdr.Append(buf.Data, hdr.Version)
 	if err != nil {
@@ -815,7 +816,8 @@ func (s *baseServer) sendConnectionRefused(p rejectedPacket) {
 
 // sendError sends the error as a response to the packet received with header hdr
 func (s *baseServer) sendError(remoteAddr net.Addr, hdr *wire.Header, sealer handshake.LongHeaderSealer, errorCode qerr.TransportErrorCode, info packetInfo) error {
-	b := getPacketBuffer()
+	maxPacketSize := protocol.ByteCount(s.config.MaxPacketBufferSize)
+	b := getPacketBuffer(maxPacketSize)
 	defer b.Release()
 
 	ccf := &wire.ConnectionCloseFrame{ErrorCode: uint64(errorCode)}

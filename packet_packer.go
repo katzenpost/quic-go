@@ -260,7 +260,7 @@ func (p *packetPacker) packConnectionClose(
 		}
 		payloads[i] = pl
 	}
-	buffer := getPacketBuffer()
+	buffer := getPacketBuffer(maxPacketSize)
 	packet := &coalescedPacket{
 		buffer:         buffer,
 		longHdrPackets: make([]*longHeaderPacket, 0, numLongHdrPackets),
@@ -404,7 +404,7 @@ func (p *packetPacker) PackCoalescedPacket(onlyAck bool, maxPacketSize protocol.
 		return nil, nil
 	}
 
-	buffer := getPacketBuffer()
+	buffer := getPacketBuffer(maxPacketSize)
 	packet := &coalescedPacket{
 		buffer:         buffer,
 		longHdrPackets: make([]*longHeaderPacket, 0, 3),
@@ -443,7 +443,7 @@ func (p *packetPacker) PackCoalescedPacket(onlyAck bool, maxPacketSize protocol.
 // PackAckOnlyPacket packs a packet containing only an ACK in the application data packet number space.
 // It should be called after the handshake is confirmed.
 func (p *packetPacker) PackAckOnlyPacket(maxPacketSize protocol.ByteCount, v protocol.VersionNumber) (shortHeaderPacket, *packetBuffer, error) {
-	buf := getPacketBuffer()
+	buf := getPacketBuffer(maxPacketSize)
 	packet, err := p.appendPacket(buf, true, maxPacketSize, v)
 	return packet, buf, err
 }
@@ -663,7 +663,7 @@ func (p *packetPacker) MaybePackProbePacket(encLevel protocol.EncryptionLevel, m
 		if pl.length == 0 {
 			return nil, nil
 		}
-		buffer := getPacketBuffer()
+		buffer := getPacketBuffer(maxPacketSize)
 		packet := &coalescedPacket{buffer: buffer}
 		shp, err := p.appendShortHeaderPacket(buffer, connID, pn, pnLen, kp, pl, 0, maxPacketSize, s, false, v)
 		if err != nil {
@@ -699,7 +699,7 @@ func (p *packetPacker) MaybePackProbePacket(encLevel protocol.EncryptionLevel, m
 	if pl.length == 0 {
 		return nil, nil
 	}
-	buffer := getPacketBuffer()
+	buffer := getPacketBuffer(maxPacketSize)
 	packet := &coalescedPacket{buffer: buffer}
 	size := p.longHeaderPacketLength(hdr, pl, v) + protocol.ByteCount(sealer.Overhead())
 	var padding protocol.ByteCount
@@ -720,7 +720,7 @@ func (p *packetPacker) PackMTUProbePacket(ping ackhandler.Frame, size protocol.B
 		frames: []ackhandler.Frame{ping},
 		length: ping.Frame.Length(v),
 	}
-	buffer := getPacketBuffer()
+	buffer := getPacketBuffer(size)
 	s, err := p.cryptoSetup.Get1RTTSealer()
 	if err != nil {
 		return shortHeaderPacket{}, nil, err

@@ -72,10 +72,10 @@ type Cubic struct {
 // NewCubic returns a new Cubic instance
 func NewCubic(clock Clock, maxDatagramSize protocol.ByteCount) *Cubic {
 	c := &Cubic{
-		clock:          clock,
-		numConnections: defaultNumConnections,
+		clock:           clock,
+		numConnections:  defaultNumConnections,
 		maxDatagramSize: maxDatagramSize,
-		cubeFactor: 1 << cubeScale / cubeCongestionWindowScale / maxDatagramSize,
+		cubeFactor:      1 << cubeScale / cubeCongestionWindowScale / maxDatagramSize,
 	}
 	c.Reset()
 	return c
