@@ -21,6 +21,7 @@ import (
 type oobRecordingConn struct {
 	*net.UDPConn
 	oobs [][]byte
+	packetSize protocol.ByteCount
 }
 
 func (c *oobRecordingConn) WriteMsgUDP(b, oob []byte, addr *net.UDPAddr) (n, oobn int, err error) {
@@ -34,7 +35,7 @@ var _ = Describe("OOB Conn Test", func() {
 		Expect(err).ToNot(HaveOccurred())
 		udpConn, err := net.ListenUDP(network, addr)
 		Expect(err).ToNot(HaveOccurred())
-		oobConn, err := newConn(udpConn, true)
+		oobConn, err := newConn(udpConn, true, protocol.MaxPacketBufferSize)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(oobConn.capabilities().DF).To(BeTrue())
 
@@ -277,7 +278,7 @@ var _ = Describe("OOB Conn Test", func() {
 			Expect(err).ToNot(HaveOccurred())
 			udpConn, err := net.ListenUDP("udp", addr)
 			Expect(err).ToNot(HaveOccurred())
-			oobConn, err := newConn(udpConn, true)
+			oobConn, err := newConn(udpConn, true, protocol.MaxPacketBufferSize)
 			Expect(err).ToNot(HaveOccurred())
 			oobConn.batchConn = batchConn
 
@@ -295,8 +296,8 @@ var _ = Describe("OOB Conn Test", func() {
 			Expect(err).ToNot(HaveOccurred())
 			udpConn, err := net.ListenUDP("udp", addr)
 			Expect(err).ToNot(HaveOccurred())
-			c := &oobRecordingConn{UDPConn: udpConn}
-			oobConn, err := newConn(c, true)
+			c := &oobRecordingConn{UDPConn: udpConn, packetSize: protocol.MaxPacketBufferSize}
+			oobConn, err := newConn(c, true, c.packetSize)
 			Expect(err).ToNot(HaveOccurred())
 
 			oob := make([]byte, 0, 123)
@@ -317,8 +318,8 @@ var _ = Describe("OOB Conn Test", func() {
 				Expect(err).ToNot(HaveOccurred())
 				udpConn, err := net.ListenUDP("udp", addr)
 				Expect(err).ToNot(HaveOccurred())
-				c := &oobRecordingConn{UDPConn: udpConn}
-				oobConn, err := newConn(c, true)
+				c := &oobRecordingConn{UDPConn: udpConn, packetSize: protocol.MaxPacketBufferSize}
+				oobConn, err := newConn(c, true, c.packetSize)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(oobConn.capabilities().GSO).To(BeTrue())
 
