@@ -26,7 +26,7 @@ type OOBCapablePacketConn interface {
 
 var _ OOBCapablePacketConn = &net.UDPConn{}
 
-func wrapConn(pc net.PacketConn) (rawConn, error) {
+func wrapConn(pc net.PacketConn, packetSize protocol.ByteCount) (rawConn, error) {
 	if err := setReceiveBuffer(pc); err != nil {
 		if !strings.Contains(err.Error(), "use of closed network connection") {
 			setBufferWarningOnce.Do(func() {
@@ -70,9 +70,9 @@ func wrapConn(pc net.PacketConn) (rawConn, error) {
 	c, ok := pc.(OOBCapablePacketConn)
 	if !ok {
 		utils.DefaultLogger.Infof("PacketConn is not a net.UDPConn. Disabling optimizations possible on UDP connections.")
-		return &basicConn{PacketConn: pc, supportsDF: supportsDF}, nil
+		return &basicConn{PacketConn: pc, supportsDF: supportsDF, packetSize: packetSize}, nil
 	}
-	return newConn(c, supportsDF)
+	return newConn(c, supportsDF, packetSize)
 }
 
 // The basicConn is the most trivial implementation of a rawConn.
@@ -92,7 +92,7 @@ func (c *basicConn) ReadPacket() (receivedPacket, error) {
 	buffer := getPacketBuffer(c.packetSize)
 	// The packet size should not exceed protocol.MaxPacketBufferSize bytes
 	// If it does, we only read a truncated packet, which will then end up undecryptable
-	buffer.Data = buffer.Data[:protocol.MaxPacketBufferSize]
+	buffer.Data = buffer.Data[:c.packetSize]
 	n, addr, err := c.PacketConn.ReadFrom(buffer.Data)
 	if err != nil {
 		return receivedPacket{}, err

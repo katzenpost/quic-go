@@ -72,13 +72,14 @@ type oobConn struct {
 	// Packets received from the kernel, but not yet returned by ReadPacket().
 	messages []ipv4.Message
 	buffers  [batchSize]*packetBuffer
+	packetSize protocol.ByteCount
 
 	cap connCapabilities
 }
 
 var _ rawConn = &oobConn{}
 
-func newConn(c OOBCapablePacketConn, supportsDF bool) (*oobConn, error) {
+func newConn(c OOBCapablePacketConn, supportsDF bool, packetSize protocol.ByteCount) (*oobConn, error) {
 	rawConn, err := c.SyscallConn()
 	if err != nil {
 		return nil, err
@@ -145,6 +146,7 @@ func newConn(c OOBCapablePacketConn, supportsDF bool) (*oobConn, error) {
 		batchConn:            bc,
 		messages:             msgs,
 		readPos:              batchSize,
+		packetSize:           packetSize,
 		cap: connCapabilities{
 			DF:  supportsDF,
 			GSO: isGSOSupported(rawConn),
@@ -164,8 +166,7 @@ func (c *oobConn) ReadPacket() (receivedPacket, error) {
 		c.messages = c.messages[:batchSize]
 		// replace buffers data buffers up to the packet that has been consumed during the last ReadBatch call
 		for i := uint8(0); i < c.readPos; i++ {
-			buffer := getPacketBuffer(protocol.MaxPacketBufferSize)
-			buffer.Data = buffer.Data[:protocol.MaxPacketBufferSize]
+			buffer := getPacketBuffer(c.packetSize)
 			c.buffers[i] = buffer
 			c.messages[i].Buffers[0] = c.buffers[i].Data
 		}

@@ -21,7 +21,7 @@ var _ = Describe("Basic Conn Test", func() {
 			return copy(b, data), addr, nil
 		})
 
-		conn, err := wrapConn(c)
+		conn, err := wrapConn(c, protocol.MaxPacketBufferSize)
 		Expect(err).ToNot(HaveOccurred())
 		p, err := conn.ReadPacket()
 		Expect(err).ToNot(HaveOccurred())
