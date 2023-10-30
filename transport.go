@@ -94,6 +94,7 @@ type Transport struct {
 	connIDGenerator ConnectionIDGenerator
 
 	server *baseServer
+	conf   *Config
 
 	conn rawConn
 
@@ -147,7 +148,7 @@ func (t *Transport) createServer(tlsConf *tls.Config, conf *Config, allow0RTT bo
 	if t.server != nil {
 		return nil, errListenerAlreadySet
 	}
-	conf = populateServerConfig(conf)
+	t.conf = populateServerConfig(conf)
 	if err := t.init(false); err != nil {
 		return nil, err
 	}
@@ -156,7 +157,7 @@ func (t *Transport) createServer(tlsConf *tls.Config, conf *Config, allow0RTT bo
 		t.handlerMap,
 		t.connIDGenerator,
 		tlsConf,
-		conf,
+		t.conf,
 		t.Tracer,
 		t.closeServer,
 		*t.TokenGeneratorKey,
@@ -182,7 +183,7 @@ func (t *Transport) dial(ctx context.Context, addr net.Addr, host string, tlsCon
 	if err := validateConfig(conf); err != nil {
 		return nil, err
 	}
-	conf = populateConfig(conf)
+	t.conf = populateConfig(conf)
 	if err := t.init(t.isSingleUse); err != nil {
 		return nil, err
 	}
@@ -193,7 +194,7 @@ func (t *Transport) dial(ctx context.Context, addr net.Addr, host string, tlsCon
 	tlsConf = tlsConf.Clone()
 	tlsConf.MinVersion = tls.VersionTLS13
 	setTLSConfigServerName(tlsConf, addr, host)
-	return dial(ctx, newSendConn(t.conn, addr, packetInfo{}, utils.DefaultLogger), t.connIDGenerator, t.handlerMap, tlsConf, conf, onClose, use0RTT)
+	return dial(ctx, newSendConn(t.conn, addr, packetInfo{}, utils.DefaultLogger), t.connIDGenerator, t.handlerMap, tlsConf, t.conf, onClose, use0RTT)
 }
 
 func (t *Transport) init(allowZeroLengthConnIDs bool) error {
@@ -203,7 +204,7 @@ func (t *Transport) init(allowZeroLengthConnIDs bool) error {
 			conn = c
 		} else {
 			var err error
-			conn, err = wrapConn(t.Conn)
+			conn, err = wrapConn(t.Conn, protocol.ByteCount(t.conf.MaxPacketBufferSize))
 			if err != nil {
 				t.initErr = err
 				return
