@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"sync"
@@ -27,6 +28,8 @@ func main() {
 	quiet := flag.Bool("q", false, "don't print the data")
 	keyLogFile := flag.String("keylog", "", "key log file")
 	insecure := flag.Bool("insecure", false, "skip certificate verification")
+	proxy := flag.String("proxy", "", "host:port of proxy")
+	method := flag.String("method", "GET", "CONNECT or GET is supported")
 	enableQlog := flag.Bool("qlog", false, "output a qlog (in the same directory)")
 	flag.Parse()
 	urls := flag.Args()
@@ -76,6 +79,23 @@ func main() {
 		},
 		QuicConfig: &qconf,
 	}
+	if *method == http.MethodConnect {
+		if *proxy == "" {
+			log.Fatal("Must specify -proxy with -method CONNECT")
+		}
+		roundTripper.Dial = func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlyConnection, error) {
+			udpConn, err := net.ListenUDP("udp", nil)
+			if err != nil {
+				return nil, err
+			}
+			transport := &quic.Transport{Conn: udpConn}
+			udpAddr, err := net.ResolveUDPAddr("udp", *proxy)
+			if err != nil {
+				return nil, err
+			}
+			return transport.DialEarly(ctx, udpAddr, tlsCfg, cfg)
+		}
+	}
 	defer roundTripper.Close()
 	hclient := &http.Client{
 		Transport: roundTripper,
@@ -84,9 +104,16 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(len(urls))
 	for _, addr := range urls {
-		logger.Infof("GET %s", addr)
 		go func(addr string) {
-			rsp, err := hclient.Get(addr)
+			if !(*method == http.MethodConnect || *method == http.MethodGet) {
+				log.Fatal("Unsupported method", *method)
+			}
+			req, err := http.NewRequest(*method, addr, nil)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			rsp, err := hclient.Do(req)
 			if err != nil {
 				log.Fatal(err)
 			}
